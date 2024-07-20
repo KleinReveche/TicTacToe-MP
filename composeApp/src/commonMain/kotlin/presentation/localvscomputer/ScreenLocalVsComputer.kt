@@ -26,10 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import data.game.ComputerDifficulty
-import domain.cases.GetPlayerByName
 import domain.model.GameResult
 import domain.model.PLAYER_O
 import domain.model.PLAYER_X
+import domain.repository.PlayerRepository
 import kotlin.random.Random
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -55,8 +55,8 @@ fun ScreenLocalVsComputer(screenData: ScreenLocalVsComputer, navController: NavC
   val playerName = screenData.playerName
   val playerType = screenData.playerType[0]
   val computerDifficulty = ComputerDifficulty.entries[screenData.difficulty[0].digitToInt()]
-  val getPlayerByName = koinInject<GetPlayerByName>()
-  val player = getPlayerByName(playerName)
+  val playerRepository = koinInject<PlayerRepository>()
+  val player = playerRepository.getPlayerByName(playerName)
   val player1Name = if (playerType == PLAYER_X) playerName else "AI: ${computerDifficulty.name}"
   val player2Name = if (playerType == PLAYER_O) playerName else "AI: ${computerDifficulty.name}"
   val vm =

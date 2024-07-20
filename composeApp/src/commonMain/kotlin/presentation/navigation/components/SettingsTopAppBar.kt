@@ -23,10 +23,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
-import domain.cases.GetAppSetting
-import domain.cases.UpsertAppSetting
 import domain.model.AppSetting
 import domain.model.AppSettings
+import domain.repository.AppSettingRepository
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -39,13 +38,13 @@ import tictactoe.composeapp.generated.resources.settings
 fun SettingsTopAppBar(text: String, onClick: () -> Unit) {
   val coroutineScope = rememberCoroutineScope()
   var rotationAngle by remember { mutableFloatStateOf(0f) }
-  val getAppSetting = koinInject<GetAppSetting>()
+  val appSettingRepository = koinInject<AppSettingRepository>()
   val isDarkMode =
-    getAppSetting(AppSettings.DARK_MODE)
+    appSettingRepository
+      .getAppSetting(AppSettings.DARK_MODE)
       .collectAsState(AppSetting(AppSettings.DARK_MODE, "true"))
       .value
       ?.value ?: isSystemInDarkTheme().toString()
-  val upsertAppSetting = koinInject<UpsertAppSetting>()
   val animatedRotationAngle: Float by
     animateFloatAsState(
       targetValue = rotationAngle,
@@ -61,7 +60,7 @@ fun SettingsTopAppBar(text: String, onClick: () -> Unit) {
         checked = isDarkMode.toBoolean(),
         onCheckedChanged = {
           coroutineScope.launch {
-            upsertAppSetting(AppSetting(AppSettings.DARK_MODE, it.toString()))
+            appSettingRepository.upsertAppSetting(AppSetting(AppSettings.DARK_MODE, it.toString()))
           }
         },
         switchWidth = 80.dp,

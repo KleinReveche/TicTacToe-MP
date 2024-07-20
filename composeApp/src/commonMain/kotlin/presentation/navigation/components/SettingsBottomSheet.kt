@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SegmentedButton
@@ -21,10 +20,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import domain.cases.GetAppSetting
-import domain.cases.UpsertAppSetting
 import domain.model.AppSetting
 import domain.model.AppSettings
+import domain.repository.AppSettingRepository
 import getPlatform
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -38,8 +36,7 @@ fun SettingsBottomSheet(
   onDismissRequest: () -> Unit,
 ) {
   val coroutineScope = rememberCoroutineScope()
-  val upsertAppSetting = koinInject<UpsertAppSetting>()
-  val getAppSetting = koinInject<GetAppSetting>()
+  val appSettingRepository = koinInject<AppSettingRepository>()
   val isAndroidPlatformWithDynamicColorSupport =
     getPlatform().name == "Android" && getPlatform().version.toInt() >= 31
   val themeOptions =
@@ -50,20 +47,23 @@ fun SettingsBottomSheet(
 
   val oledOptions = listOf("On", "Off")
   val currentOledOption =
-    getAppSetting(AppSettings.OLED)
+    appSettingRepository
+      .getAppSetting(AppSettings.OLED)
       .collectAsState(AppSetting(AppSettings.OLED, "false"))
       .value
       ?.value ?: "false"
 
   val currentUiColorTypeFromDb =
-    getAppSetting(AppSettings.UI_COLOR_TYPE)
+    appSettingRepository
+      .getAppSetting(AppSettings.UI_COLOR_TYPE)
       .collectAsState(AppSetting(AppSettings.UI_COLOR_TYPE, UIColorTypes.Default.name))
       .value
       ?.value
   val currentUiColorType =
     UIColorTypes.entries.find { it.name == currentUiColorTypeFromDb } ?: UIColorTypes.Default
   val isDynamicColorAndroid =
-    (getAppSetting(AppSettings.DYNAMIC_COLOR_ANDROID)
+    (appSettingRepository
+        .getAppSetting(AppSettings.DYNAMIC_COLOR_ANDROID)
         .collectAsState(AppSetting(AppSettings.DYNAMIC_COLOR_ANDROID, "true"))
         .value
         ?.value ?: "true")
@@ -94,7 +94,9 @@ fun SettingsBottomSheet(
             onClick = {
               if (index == 0 && isAndroidPlatformWithDynamicColorSupport) {
                 coroutineScope.launch {
-                  upsertAppSetting(AppSetting(AppSettings.DYNAMIC_COLOR_ANDROID, "true"))
+                  appSettingRepository.upsertAppSetting(
+                    AppSetting(AppSettings.DYNAMIC_COLOR_ANDROID, "true")
+                  )
                 }
               } else {
                 val selectedTheme =
@@ -104,14 +106,18 @@ fun SettingsBottomSheet(
                     UIColorTypes.entries[index]
                   }
                 coroutineScope.launch {
-                  upsertAppSetting(AppSetting(AppSettings.UI_COLOR_TYPE, selectedTheme.name))
-                  upsertAppSetting(AppSetting(AppSettings.DYNAMIC_COLOR_ANDROID, "false"))
+                  appSettingRepository.upsertAppSetting(
+                    AppSetting(AppSettings.UI_COLOR_TYPE, selectedTheme.name)
+                  )
+                  appSettingRepository.upsertAppSetting(
+                    AppSetting(AppSettings.DYNAMIC_COLOR_ANDROID, "false")
+                  )
                 }
               }
             },
             selected = index == currentThemeIndex,
           ) {
-            Text(text = themeOption, modifier = Modifier.padding(5.dp, 0.dp) )
+            Text(text = themeOption, modifier = Modifier.padding(5.dp, 0.dp))
           }
         }
       }
@@ -124,7 +130,7 @@ fun SettingsBottomSheet(
             shape = SegmentedButtonDefaults.itemShape(count = oledOptions.size, index = index),
             onClick = {
               coroutineScope.launch {
-                upsertAppSetting(
+                appSettingRepository.upsertAppSetting(
                   AppSetting(AppSettings.OLED, (!currentOledOption.toBoolean()).toString())
                 )
               }
