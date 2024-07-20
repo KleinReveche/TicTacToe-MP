@@ -39,9 +39,9 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.parameter.parametersOf
 import presentation.common.components.BackHistoryTopAppBar
+import presentation.common.components.GameHistoryBottomSheet
 import presentation.common.components.StatCounter
 import presentation.common.components.TicTacToeGrid
-import presentation.localvscomputer.components.ScreenLocalVsComputerBottomSheet
 import presentation.navigation.ScreenLocalVsComputer
 import tictactoe.composeapp.generated.resources.Res
 import tictactoe.composeapp.generated.resources.restart
@@ -65,9 +65,11 @@ fun ScreenLocalVsComputer(screenData: ScreenLocalVsComputer, navController: NavC
     }
   var delayComputerMove by remember { mutableStateOf(true) }
   val gameData =
-    vm.gameData.collectAsState(initial = emptyList()).value.filter { gd ->
-      gd.player1Name.contains("AI") || gd.player2Name.contains("AI")
-    }
+    vm.gameData
+      .collectAsState(initial = emptyList())
+      .value
+      .filter { gd -> gd.player1Name.contains("AI") || gd.player2Name.contains("AI") }
+      .sortedByDescending { it.date }
 
   LaunchedEffect(player) {
     if (vm.player == null) {
@@ -148,7 +150,8 @@ fun ScreenLocalVsComputer(screenData: ScreenLocalVsComputer, navController: NavC
     }
 
     if (showBottomSheet) {
-      ScreenLocalVsComputerBottomSheet(
+      GameHistoryBottomSheet(
+        header = "All Games vs AI",
         onDismissRequest = { showBottomSheet = false },
         sheetState = sheetState,
         gameData = gameData,
